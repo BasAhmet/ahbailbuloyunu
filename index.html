@@ -10,6 +10,15 @@
     <div class="w-full max-w-2xl bg-white p-6 rounded-2xl shadow-xl mt-10">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-3xl font-extrabold text-indigo-600">İl Bulmaca</h1>
+            <!-- Skorun yanına ekleyebilirsin -->
+            <div class="bg-red-100 text-red-800 px-4 py-2 rounded-xl font-bold text-lg shadow-sm">
+                Kalan Hak: <span id="hakGosterge">6</span>
+            </div>
+            
+            <!-- Tahmin butonunun yanına İpucu butonu -->
+            <button id="ipucuBtn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-6 py-3 rounded-xl">
+                💡 İpucu
+            </button>
             <div class="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-xl font-bold text-lg shadow-sm">
                 Skor: <span id="skorGosterge">0</span>
             </div>
@@ -64,6 +73,46 @@
         const sonucAlani = document.getElementById('sonucAlani');
         const sonucMesaji = document.getElementById('sonucMesaji');
         const yeniOyunBtn = document.getElementById('yeniOyunBtn');
+        let kalanHak = 6;
+
+        function ipucuAl() {
+            if (kalanHak <= 1) {
+                alert("Son hakta ipucu alamazsın!");
+                return;
+            }
+            
+            // İpucu türlerini belirleyelim
+            const ipuclari = [
+                `Bu ilin plaka kodu: ${hedefIl.plaka}`,
+                `Bu il ${hedefIl.bolge} bölgesindedir.`,
+                `Bu ilin komşularından biri: ${hedefIl.komsular[Math.floor(Math.random() * hedefIl.komsular.length)]}`
+            ];
+            
+            // Rastgele birini seçip gösterelim
+            const secilenIpucu = ipuclari[Math.floor(Math.random() * ipuclari.length)];
+            
+            // UI'da bir yere yazdıralım
+            alert("İpucu: " + secilenIpucu);
+            
+            // İpucu almak 1 hak eksiltsin (stratejik bir karar)
+            kalanHak--;
+            guncelleHakGostergesi();
+        }
+        
+        function tahminYap() {
+            if (oyunBitti || kalanHak <= 0) return;
+            
+            // ... tahmin kontrol kodların ...
+            
+            // Her yanlış tahminde hak düşür
+            kalanHak--;
+            guncelleHakGostergesi();
+            
+            if (kalanHak <= 0 && mesafe !== 0) {
+                alert("Hakların bitti! Oyun bitti. İl: " + hedefIl.isim);
+                // Yeniden başlama mantığını tetikle
+            }
+        }
         // Veriyi dışarıdan çekme işlemi
         async function verileriYukle() {
             try {
