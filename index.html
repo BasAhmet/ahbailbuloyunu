@@ -6,57 +6,65 @@
     <title>Sınırsız İl Bulmaca</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 min-h-screen p-4 md:p-8 flex justify-center items-start">
-    <div class="w-full max-w-2xl bg-white p-6 rounded-2xl shadow-xl mt-10">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-extrabold text-indigo-600">İl Bulmaca</h1>
-            <!-- Skorun yanına ekleyebilirsin -->
-            <div class="bg-red-100 text-red-800 px-4 py-2 rounded-xl font-bold text-lg shadow-sm">
-                Kalan Hak: <span id="hakGosterge">6</span>
-            </div>
+<body class="bg-slate-100 min-h-screen p-2 md:p-8 flex justify-center items-start">
+    <div class="w-full max-w-2xl bg-white p-4 md:p-6 rounded-2xl shadow-xl mt-4 md:mt-10">
+        
+        <!-- ÜST KISIM (Başlık ve Göstergeler) -->
+        <!-- flex-col ile mobilde alt alta, md:flex-row ile bilgisayarda yan yana -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <h1 class="text-3xl font-extrabold text-indigo-600 text-center">İl Bulmaca</h1>
             
-            <!-- Tahmin butonunun yanına İpucu butonu -->
-            <button id="ipucuBtn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-6 py-3 rounded-xl">
-                💡 İpucu
-            </button>
-            <div class="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-xl font-bold text-lg shadow-sm">
-                Skor: <span id="skorGosterge">0</span>
+            <!-- Gösterge butonları sığmazsa alt satıra geçsin (flex-wrap) -->
+            <div class="flex flex-wrap justify-center items-center gap-2 w-full md:w-auto">
+                <div class="bg-red-100 text-red-800 px-3 py-2 rounded-xl font-bold text-sm md:text-lg shadow-sm whitespace-nowrap">
+                    Kalan Hak: <span id="hakGosterge">6</span>
+                </div>
+                
+                <button id="ipucuBtn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 md:px-6 md:py-3 rounded-xl text-sm md:text-base">
+                    💡 İpucu
+                </button>
+                
+                <div class="bg-indigo-100 text-indigo-800 px-3 py-2 rounded-xl font-bold text-sm md:text-lg shadow-sm whitespace-nowrap">
+                    Skor: <span id="skorGosterge">0</span>
+                </div>
             </div>
         </div>
         
         <!-- İl Şekli Görseli -->
-        <div class="w-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl h-64 flex justify-center items-center mb-6 p-4">
+        <div class="w-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl h-48 md:h-64 flex justify-center items-center mb-6 p-4">
             <svg id="ilSekli" viewBox="0 0 100 100" class="w-full h-full text-indigo-500 fill-current drop-shadow-md transition-all duration-500">
                 <!-- Şekil JS ile buraya çizilecek -->
             </svg>
         </div>
 
-        <div class="mb-6 flex gap-3">
-            <input type="text" id="ilInput" list="illerList" class="flex-1 border-2 border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 text-lg transition" placeholder="Bu şekil hangi ile ait?">
+        <!-- TAHMİN ALANI -->
+        <!-- Mobilde alt alta (flex-col), tablet ve pc'de yan yana (sm:flex-row) -->
+        <div class="mb-6 flex flex-col sm:flex-row gap-3">
+            <input type="text" id="ilInput" list="illerList" class="w-full sm:flex-1 border-2 border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 text-lg transition" placeholder="Bu şekil hangi ile ait?">
             <datalist id="illerList"></datalist>
-            <button id="tahminEtBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-xl transition shadow-lg shadow-indigo-200">
-                Tahmin
+            <button id="tahminEtBtn" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-xl transition shadow-lg shadow-indigo-200">
+                Tahmin Et
             </button>
         </div>
 
-        <!-- Sonuç & Yeni Oyun Alanı (Gizli başlar) -->
+        <!-- Sonuç & Yeni Oyun Alanı -->
         <div id="sonucAlani" class="hidden mb-6 p-4 rounded-xl text-center">
-            <h2 id="sonucMesaji" class="text-2xl font-bold mb-3"></h2>
+            <h2 id="sonucMesaji" class="text-xl md:text-2xl font-bold mb-3"></h2>
             <button id="yeniOyunBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-2 rounded-lg transition shadow-md">
                 Sıradaki İl ➔
             </button>
         </div>
 
-        <div class="grid grid-cols-4 gap-2 mb-4 text-center font-bold text-slate-400 text-xs uppercase tracking-wider border-b-2 border-slate-100 pb-3">
+        <!-- Tablo Başlıkları -->
+        <div class="grid grid-cols-4 gap-1 md:gap-2 mb-4 text-center font-bold text-slate-400 text-[10px] md:text-xs uppercase tracking-wider border-b-2 border-slate-100 pb-3">
             <div>İl</div>
             <div>Mesafe</div>
             <div>Yön</div>
             <div>Yakınlık</div>
         </div>
 
-        <div id="tahminListesi" class="flex flex-col gap-3"></div>
+        <div id="tahminListesi" class="flex flex-col gap-3 text-sm md:text-base"></div>
     </div>
-
     <script>
        // 1. Ortak Değişkenler (Tek bir kez tanımlandı)
         let iller = [];
