@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Türkiye İl Bulma Oyunu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 md:p-8 flex justify-center items-start">
+    <div class="w-full max-w-2xl bg-white p-6 rounded-2xl shadow-xl mt-10">
+        <h1 class="text-3xl font-extrabold text-center text-indigo-600 mb-2">Türkiye İl Bulmaca</h1>
+        <p class="text-center text-slate-500 mb-8 text-sm">Günün ilini en az denemede bulmaya çalış!</p>
+
+        <!-- Arama ve Tahmin Alanı -->
+        <div class="mb-6 flex gap-3">
+            <input 
+                type="text" 
+                id="ilInput" 
+                list="illerList" 
+                class="flex-1 border-2 border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 text-lg transition" 
+                placeholder="Bir il tahmin et..."
+            >
+            <datalist id="illerList"></datalist>
+            <button 
+                id="tahminEtBtn" 
+                class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-xl transition shadow-lg shadow-indigo-200"
+            >
+                Tahmin
+            </button>
+        </div>
+
+        <!-- Tahmin Geçmişi Başlıkları -->
+        <div class="grid grid-cols-4 gap-2 mb-4 text-center font-bold text-slate-400 text-xs uppercase tracking-wider border-b-2 border-slate-100 pb-3">
+            <div>İl</div>
+            <div>Mesafe</div>
+            <div>Yön</div>
+            <div>Yakınlık</div>
+        </div>
+
+        <!-- Tahmin Listesi (Kapsayıcı) -->
+        <div id="tahminListesi" class="flex flex-col gap-3">
+            <!-- Örnek bir satır tasarımı (Daha sonra JS ile dinamik eklenecek) -->
+        </div>
+    </div>
+
+    <script>
+        // 1. ADIM: 81 İlin Veri Seti
+        const iller = [{"plaka": 1, "isim": "Adana", "lat": 37.0, "lng": 35.3213},
+                       {"plaka": 2, "isim": "Adıyaman", "lat": 37.7648, "lng": 38.2786},
+                       {"plaka": 3, "isim": "Afyonkarahisar", "lat": 38.7507, "lng": 30.5567},
+                       {"plaka": 4, "isim": "Ağrı", "lat": 39.7191, "lng": 43.0503},
+                       {"plaka": 5, "isim": "Amasya", "lat": 40.6499, "lng": 35.8353},
+                       {"plaka": 6, "isim": "Ankara", "lat": 39.9208, "lng": 32.8541},
+                       {"plaka": 7, "isim": "Antalya", "lat": 36.8969, "lng": 30.7133},
+                       {"plaka": 8, "isim": "Artvin", "lat": 41.1828, "lng": 41.8183},
+                       {"plaka": 9, "isim": "Aydın", "lat": 37.8444, "lng": 27.8458},
+                       {"plaka": 10, "isim": "Balıkesir", "lat": 39.6484, "lng": 27.8826},
+                       {"plaka": 11, "isim": "Bilecik", "lat": 40.1451, "lng": 29.9798},
+                       {"plaka": 12, "isim": "Bingöl", "lat": 38.8853, "lng": 40.4983},
+                       {"plaka": 13, "isim": "Bitlis", "lat": 38.4011, "lng": 42.1078},
+                       {"plaka": 14, "isim": "Bolu", "lat": 40.7392, "lng": 31.6116},
+                       {"plaka": 15, "isim": "Burdur", "lat": 37.7204, "lng": 30.2889},
+                       {"plaka": 16, "isim": "Bursa", "lat": 40.1824, "lng": 29.0669},
+                       {"plaka": 17, "isim": "Çanakkale", "lat": 40.1553, "lng": 26.4089},
+                       {"plaka": 18, "isim": "Çankırı", "lat": 40.6013, "lng": 33.6134},
+                       {"plaka": 19, "isim": "Çorum", "lat": 40.5506, "lng": 34.9556},
+                       {"plaka": 20, "isim": "Denizli", "lat": 37.7765, "lng": 29.0864},
+                       {"plaka": 21, "isim": "Diyarbakır", "lat": 37.9144, "lng": 40.2306},
+                       {"plaka": 22, "isim": "Edirne", "lat": 41.6744, "lng": 26.5583},
+                       {"plaka": 23, "isim": "Elazığ", "lat": 38.681, "lng": 39.2264},
+                       {"plaka": 24, "isim": "Erzincan", "lat": 39.7468, "lng": 39.4911},
+                       {"plaka": 25, "isim": "Erzurum", "lat": 39.9, "lng": 41.27},
+                       {"plaka": 26, "isim": "Eskişehir", "lat": 39.7767, "lng": 30.5206},
+                       {"plaka": 27, "isim": "Gaziantep", "lat": 37.0662, "lng": 37.3833},
+                       {"plaka": 28, "isim": "Giresun", "lat": 40.9128, "lng": 38.3895}, 
+                       {"plaka": 29, "isim": "Gümüşhane", "lat": 40.4608, "lng": 39.4814}, 
+                       {"plaka": 30, "isim": "Hakkari", "lat": 37.5744, "lng": 43.7408},
+                       {"plaka": 31, "isim": "Hatay", "lat": 36.4018, "lng": 36.3498},
+                       {"plaka": 32, "isim": "Isparta", "lat": 37.7648, "lng": 30.5566}, 
+                       {"plaka": 33, "isim": "Mersin", "lat": 36.8, "lng": 34.6333}, 
+                       {"plaka": 34, "isim": "İstanbul", "lat": 41.0082, "lng": 28.9784}, 
+                       {"plaka": 35, "isim": "İzmir", "lat": 38.4192, "lng": 27.1287}, 
+                       {"plaka": 36, "isim": "Kars", "lat": 40.6013, "lng": 43.0975}, 
+                       {"plaka": 37, "isim": "Kastamonu", "lat": 41.3766, "lng": 33.7765}, 
+                       {"plaka": 38, "isim": "Kayseri", "lat": 38.7312, "lng": 35.4787}, 
+                       {"plaka": 39, "isim": "Kırklareli", "lat": 41.7333, "lng": 27.2167}, 
+                       {"plaka": 40, "isim": "Kırşehir", "lat": 39.1425, "lng": 34.1709}, 
+                       {"plaka": 41, "isim": "Kocaeli", "lat": 40.8533, "lng": 29.8815}, 
+                       {"plaka": 42, "isim": "Konya", "lat": 37.8667, "lng": 32.4833}, 
+                       {"plaka": 43, "isim": "Kütahya", "lat": 39.4167, "lng": 29.9833}, 
+                       {"plaka": 44, "isim": "Malatya", "lat": 38.3552, "lng": 38.3095}, 
+                       {"plaka": 45, "isim": "Manisa", "lat": 38.6191, "lng": 27.4289}, 
+                       {"plaka": 46, "isim": "Kahramanmaraş", "lat": 37.5858, "lng": 36.9371},
+                       {"plaka": 47, "isim": "Mardin", "lat": 37.3131, "lng": 40.7436},
+                       {"plaka": 48, "isim": "Muğla", "lat": 37.2153, "lng": 28.3636}, 
+                       {"plaka": 49, "isim": "Muş", "lat": 38.7346, "lng": 41.491}, 
+                       {"plaka": 50, "isim": "Nevşehir", "lat": 38.6244, "lng": 34.7144}, 
+                       {"plaka": 51, "isim": "Niğde", "lat": 37.9667, "lng": 34.6833}, 
+                       {"plaka": 52, "isim": "Ordu", "lat": 40.9839, "lng": 37.8764}, 
+                       {"plaka": 53, "isim": "Rize", "lat": 41.0201, "lng": 40.5234},
+                       {"plaka": 54, "isim": "Sakarya", "lat": 40.7569, "lng": 30.3783},
+                       {"plaka": 55, "isim": "Samsun", "lat": 41.2867, "lng": 36.33},
+                       {"plaka": 56, "isim": "Siirt", "lat": 37.9333, "lng": 41.95}, 
+                       {"plaka": 57, "isim": "Sinop", "lat": 42.0231, "lng": 35.1531}, 
+                       {"plaka": 58, "isim": "Sivas", "lat": 39.7477, "lng": 37.0179}, 
+                       {"plaka": 59, "isim": "Tekirdağ", "lat": 40.9833, "lng": 27.5167}, 
+                       {"plaka": 60, "isim": "Tokat", "lat": 40.3167, "lng": 36.55}, 
+                       {"plaka": 61, "isim": "Trabzon", "lat": 41.0015, "lng": 39.7178}, 
+                       {"plaka": 62, "isim": "Tunceli", "lat": 39.1079, "lng": 39.5401}, 
+                       {"plaka": 63, "isim": "Şanlıurfa", "lat": 37.15, "lng": 38.8},
+                       {"plaka": 64, "isim": "Uşak", "lat": 38.6823, "lng": 29.4082}, 
+                       {"plaka": 65, "isim": "Van", "lat": 38.4891, "lng": 43.3889}, 
+                       {"plaka": 66, "isim": "Yozgat", "lat": 39.8181, "lng": 34.8147}, 
+                       {"plaka": 67, "isim": "Zonguldak", "lat": 41.4564, "lng": 31.7987}, 
+                       {"plaka": 68, "isim": "Aksaray", "lat": 38.3687, "lng": 34.037},
+                       {"plaka": 69, "isim": "Bayburt", "lat": 40.2552, "lng": 40.2249},
+                       {"plaka": 70, "isim": "Karaman", "lat": 37.1811, "lng": 33.2222},
+                       {"plaka": 71, "isim": "Kırıkkale", "lat": 39.8468, "lng": 33.5153},
+                       {"plaka": 72, "isim": "Batman", "lat": 37.8812, "lng": 41.1351},
+                       {"plaka": 73, "isim": "Şırnak", "lat": 37.5228, "lng": 42.4594},
+                       {"plaka": 74, "isim": "Bartın", "lat": 41.6344, "lng": 32.3375},
+                       {"plaka": 75, "isim": "Ardahan", "lat": 41.1105, "lng": 42.7022},
+                       {"plaka": 76, "isim": "Iğdır", "lat": 39.9237, "lng": 44.045}, 
+                       {"plaka": 77, "isim": "Yalova", "lat": 40.65, "lng": 29.2667},
+                       {"plaka": 78, "isim": "Karabük", "lat": 41.2061, "lng": 32.6228},
+                       {"plaka": 79, "isim": "Kilis", "lat": 36.7184, "lng": 37.1212},
+                       {"plaka": 80, "isim": "Osmaniye", "lat": 37.0742, "lng": 36.2475},
+                       {"plaka": 81, "isim": "Düzce", "lat": 40.8438, "lng": 31.1565}];
+
+        // 2. ADIM: Temel Değişkenler
+        let hedefIl = null;
+        let tahminler = [];
+        const MAX_TAHMIN = 6;
+
+        // DOM Elementlerini Seçme
+        const ilInput = document.getElementById('ilInput');
+        const illerList = document.getElementById('illerList');
+        const tahminEtBtn = document.getElementById('tahminEtBtn');
+        const tahminListesi = document.getElementById('tahminListesi');
+
+        // 3. ADIM: Başlangıç Kurulumu (Init)
+        function oyunuBaslat() {
+            // Datalist'i illerle doldur (Otomatik tamamlama için)
+            iller.forEach(il => {
+                const option = document.createElement('option');
+                option.value = il.isim;
+                illerList.appendChild(option);
+            });
+
+            // Şimdilik test amaçlı rastgele bir il seçiyoruz
+            const rastgeleIndex = Math.floor(Math.random() * iller.length);
+            hedefIl = iller[rastgeleIndex];
+            
+            console.log("Gizli Hedef İl (Test için):", hedefIl.isim);
+        }
+
+        // Enter tuşuna basıldığında tahmin et butonunu tetikle
+        ilInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                tahminEtBtn.click();
+            }
+        });
+
+        // Sayfa yüklendiğinde oyunu başlat
+        oyunuBaslat();
+        
+        // SONRAKİ AŞAMA: Mesafe hesaplama ve tahmin mantığı buraya eklenecek.
+    </script>
+</body>
+</html>
