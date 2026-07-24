@@ -5,27 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sınırsız İl Bulmaca</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- KONFETİ EFEKTİ KÜTÜPHANESİ -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body class="bg-slate-100 min-h-screen p-2 md:p-8 flex justify-center items-start">
     <div class="w-full max-w-2xl bg-white p-4 md:p-6 rounded-2xl shadow-xl mt-4 md:mt-10">
         
-        <!-- ÜST KISIM (Başlık ve Göstergeler) -->
-        <!-- flex-col ile mobilde alt alta, md:flex-row ile bilgisayarda yan yana -->
+        <!-- ÜST KISIM -->
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <h1 class="text-3xl font-extrabold text-indigo-600 text-center">İl Bulmaca</h1>
             
-            <!-- Gösterge butonları sığmazsa alt satıra geçsin (flex-wrap) -->
             <div class="flex flex-wrap justify-center items-center gap-2 w-full md:w-auto">
                 <div class="bg-red-100 text-red-800 px-3 py-2 rounded-xl font-bold text-sm md:text-lg shadow-sm whitespace-nowrap">
-                    Kalan Hak: <span id="hakGosterge">6</span>
+                    Hak: <span id="hakGosterge">6</span>
+                </div>
+                
+                <!-- ZAMANA KARŞI SÜRE GÖSTERGESİ -->
+                <div id="sureKutusu" class="hidden bg-slate-800 text-white px-3 py-2 rounded-xl font-bold text-sm md:text-lg shadow-sm whitespace-nowrap transition">
+                    ⏱️ <span id="sureGosterge">30</span>s
                 </div>
                 
                 <button id="ipucuBtn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 md:px-6 md:py-3 rounded-xl text-sm md:text-base">
                     💡 İpucu
                 </button>
                 
-                <div class="bg-indigo-100 text-indigo-800 px-3 py-2 rounded-xl font-bold text-sm md:text-lg shadow-sm whitespace-nowrap">
-                    Skor: <span id="skorGosterge">0</span>
+                <div class="bg-indigo-100 text-indigo-800 px-3 py-2 rounded-xl font-bold text-sm md:text-lg shadow-sm whitespace-nowrap flex items-center gap-2">
+                    <span>Skor: <span id="skorGosterge">0</span></span>
+                    <!-- SERİ (STREAK) GÖSTERGESİ -->
+                    <span id="seriGosterge" class="hidden text-orange-500 text-sm md:text-base drop-shadow-md">🔥x2</span>
                 </div>
             </div>
         </div>
@@ -33,12 +40,10 @@
         <!-- İl Şekli Görseli -->
         <div class="w-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl h-48 md:h-64 flex justify-center items-center mb-6 p-4">
             <svg id="ilSekli" viewBox="0 0 100 100" class="w-full h-full text-indigo-500 fill-current drop-shadow-md transition-all duration-500">
-                <!-- Şekil JS ile buraya çizilecek -->
             </svg>
         </div>
 
         <!-- TAHMİN ALANI -->
-        <!-- Mobilde alt alta (flex-col), tablet ve pc'de yan yana (sm:flex-row) -->
         <div class="mb-6 flex flex-col sm:flex-row gap-3">
             <input type="text" id="ilInput" list="illerList" class="w-full sm:flex-1 border-2 border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 text-lg transition" placeholder="Bu şekil hangi ile ait?">
             <datalist id="illerList"></datalist>
@@ -53,6 +58,13 @@
             <button id="yeniOyunBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-2 rounded-lg transition shadow-md">
                 Sıradaki İl ➔
             </button>
+            
+            <!-- MOD DEĞİŞTİRİCİ -->
+            <div class="flex justify-center mt-4">
+                <button id="modBtn" class="text-xs md:text-sm font-bold text-slate-400 hover:text-indigo-600 transition underline decoration-dashed">
+                    ⏳ Zamana Karşı Modu Aç
+                </button>
+            </div>
         </div>
 
         <!-- Tablo Başlıkları -->
@@ -65,8 +77,8 @@
 
         <div id="tahminListesi" class="flex flex-col gap-3 text-sm md:text-base"></div>
     </div>
+
     <script>
-       // 1. Ortak Değişkenler (Tek bir kez tanımlandı)
         let iller = [];
         let ipuclariVerisi = [];
         let hedefIl = null;
@@ -74,38 +86,44 @@
         let oyunBitti = false;
         let kalanHak = 6;
         
-        // 2. HTML Elementlerinin Seçimi
+        // Yeni Mekanik Değişkenleri
+        let seri = 0; 
+        let zamanaKarsiMod = false;
+        let sureZamanlayici = null;
+        let kalanSure = 30;
+
         const ilInput = document.getElementById('ilInput');
         const illerList = document.getElementById('illerList');
         const tahminEtBtn = document.getElementById('tahminEtBtn');
         const tahminListesi = document.getElementById('tahminListesi');
         const skorGosterge = document.getElementById('skorGosterge');
-        const hakGosterge = document.getElementById('hakGosterge'); // Hak göstergesi eklendi
+        const hakGosterge = document.getElementById('hakGosterge');
         const ilSekli = document.getElementById('ilSekli');
         const sonucAlani = document.getElementById('sonucAlani');
         const sonucMesaji = document.getElementById('sonucMesaji');
         const yeniOyunBtn = document.getElementById('yeniOyunBtn');
-        const ipucuBtn = document.getElementById('ipucuBtn'); // İpucu butonu eklendi
+        const ipucuBtn = document.getElementById('ipucuBtn');
         
-        // 3. İki Veriyi Aynı Anda Yükleyen Tek Fonksiyon
+        const seriGosterge = document.getElementById('seriGosterge');
+        const sureKutusu = document.getElementById('sureKutusu');
+        const sureGosterge = document.getElementById('sureGosterge');
+        const modBtn = document.getElementById('modBtn');
+
         async function verileriYukle() {
             try {
                 const [illerResponse, ipuclariResponse] = await Promise.all([
                     fetch('iller.json'),
                     fetch('ipuclari.json')
                 ]);
-                
                 iller = await illerResponse.json();
                 ipuclariVerisi = await ipuclariResponse.json();
-                
-                init(); // Veriler inince oyunu hazırla
+                init(); 
             } catch (hata) {
                 console.error("Veriler yüklenirken hata oluştu:", hata);
-                alert("Dosyalar bulunamadı, yerel sunucuda (Live Server) açtığından emin ol!");
+                alert("Dosyalar bulunamadı, yerel sunucuda çalıştırdığından emin ol!");
             }
         }
-        
-        // 4. Oyunu İlk Hazırlama
+
         function init() {
             illerList.innerHTML = '';
             iller.forEach(il => {
@@ -115,24 +133,71 @@
             });
             yeniOyun();
         }
-        
-        // 5. Yeni El Başlatma (Tüm Değerleri Sıfırlama)
+
+        // Oyun Modu Değiştirme
+        modBtn.addEventListener('click', () => {
+            zamanaKarsiMod = !zamanaKarsiMod;
+            if(zamanaKarsiMod) {
+                modBtn.innerText = "🏃 Standart Moda Dön";
+                sureKutusu.classList.remove('hidden');
+            } else {
+                modBtn.innerText = "⏳ Zamana Karşı Modu Aç";
+                sureKutusu.classList.add('hidden');
+                clearInterval(sureZamanlayici);
+            }
+            skor = 0; 
+            seri = 0;
+            skorGosterge.innerText = skor;
+            seriGosterge.classList.add('hidden');
+            yeniOyun();
+        });
+
+        // Zamanlayıcı Fonksiyonu
+        function sureyiBaslat() {
+            clearInterval(sureZamanlayici);
+            kalanSure = 30;
+            sureGosterge.innerText = kalanSure;
+            
+            if(!zamanaKarsiMod) return;
+
+            sureZamanlayici = setInterval(() => {
+                kalanSure--;
+                sureGosterge.innerText = kalanSure;
+                
+                if(kalanSure <= 0) {
+                    clearInterval(sureZamanlayici);
+                    oyunuKaybet("Süre doldu!");
+                }
+            }, 1000);
+        }
+
+        function oyunuKaybet(sebepMesaji) {
+            oyunBitti = true;
+            ilInput.disabled = true;
+            tahminEtBtn.disabled = true;
+            seri = 0; 
+            seriGosterge.classList.add('hidden');
+            
+            sonucMesaji.innerText = `${sebepMesaji} Doğru il: ${hedefIl.isim}`;
+            sonucAlani.classList.remove('hidden');
+            sonucAlani.classList.remove('bg-green-100', 'text-green-800');
+            sonucAlani.classList.add('bg-red-100', 'text-red-800');
+        }
+
         function yeniOyun() {
             oyunBitti = false;
-            kalanHak = 6; // Haklar sıfırlandı
-            guncelleHakGostergesi(); // Ekrana yansıtıldı
+            kalanHak = 6;
+            guncelleHakGostergesi();
             
             tahminListesi.innerHTML = '';
             ilInput.value = '';
-            sonucAlani.className = 'hidden mb-6 p-4 rounded-xl text-center'; // Renkleri sıfırlayarak gizle
+            sonucAlani.className = 'hidden mb-6 p-4 rounded-xl text-center';
             ilInput.disabled = false;
             tahminEtBtn.disabled = false;
             
-            // Rastgele il seçimi
             const rastgeleIndex = Math.floor(Math.random() * iller.length);
             hedefIl = iller[rastgeleIndex];
             
-            // Şekli çizdir
             if (hedefIl.svgPaths) {
                 ilSekli.innerHTML = hedefIl.svgPaths.map(pathData => `<path d="${pathData}" />`).join('');
                 setTimeout(() => {
@@ -142,15 +207,15 @@
                 }, 10);
             }
             
-            //console.log("Gizli İl:", hedefIl.isim); // Konsoldan kopya çekebilirsin :)
+            sureyiBaslat(); 
+            console.log("Gizli İl:", hedefIl.isim); 
         }
-        
-        // 6. Eksik Olan Hak Güncelleme Fonksiyonu
+
         function guncelleHakGostergesi() {
             if (hakGosterge) hakGosterge.innerText = kalanHak;
         }
-        
-        // 7. İpucu Sistemi
+
+        // İpucu ve Eğitim Entegrasyonu
         function ipucuAl() {
             if (!hedefIl || oyunBitti) return; 
             
@@ -158,46 +223,55 @@
                 alert("Son hakta ipucu alamazsın!");
                 return;
             }
-        
+
             const ilinIpuclariObjesi = ipuclariVerisi.find(veri => veri.plaka === hedefIl.plaka);
             
             if (ilinIpuclariObjesi) {
                 kalanHak--; 
                 guncelleHakGostergesi();
                 
-                const rastgeleIpucu = ilinIpuclariObjesi.ipuclari[Math.floor(Math.random() * ilinIpuclariObjesi.ipuclari.length)];
-                alert(`💡 Meşhur Özellik: ${rastgeleIpucu}`);
+                // İpucu almak seriyi bozar
+                seri = 0;
+                seriGosterge.classList.add('hidden');
+                
+                // TYT/LGS Eğitim İpuçları Altyapısı
+                let tumIpuclari = [...ilinIpuclariObjesi.ipuclari];
+                if(ilinIpuclariObjesi.sinavIpuclari) {
+                    tumIpuclari = tumIpuclari.concat(ilinIpuclariObjesi.sinavIpuclari);
+                }
+                
+                const rastgeleIpucu = tumIpuclari[Math.floor(Math.random() * tumIpuclari.length)];
+                alert(`💡 Bilgi: ${rastgeleIpucu}`);
             } else {
                 alert("Bu il için ipucu bulunamadı!");
             }
         }
-        
-        // 8. Birleştirilmiş Kusursuz Tahmin Fonksiyonu
+
         function tahminYap() {
             if (oyunBitti || kalanHak <= 0) return;
             
             const tahminIsim = ilInput.value.trim();
-            if (!tahminIsim) return; // Boş basılırsa işlem yapma
-        
+            if (!tahminIsim) return; 
+
             const tahminEdilenIl = iller.find(il => il.isim.toLocaleLowerCase('tr-TR') === tahminIsim.toLocaleLowerCase('tr-TR'));
-        
+
             if (!tahminEdilenIl) {
                 alert("Lütfen geçerli bir il girin.");
                 return;
             }
-        
+
             const mesafe = getDistance(tahminEdilenIl.lat, tahminEdilenIl.lng, hedefIl.lat, hedefIl.lng);
             const yon = mesafe === 0 ? "🎯" : getBearing(tahminEdilenIl.lat, tahminEdilenIl.lng, hedefIl.lat, hedefIl.lng);
             
             let yakinlik = Math.max(0, 100 - Math.round((mesafe / 1600) * 100));
             if (mesafe === 0) yakinlik = 100;
-        
+
             const satir = document.createElement('div');
             satir.className = "grid grid-cols-4 gap-2 bg-slate-50 p-3 rounded-lg items-center text-center font-semibold text-slate-700 animate-[bounce_0.3s_ease-in-out]";
             
             let bgRenk = mesafe === 0 ? 'bg-green-500' : 
                          yakinlik > 80 ? 'bg-yellow-400' : 'bg-slate-200';
-        
+
             satir.innerHTML = `
                 <div class="truncate px-1">${tahminEdilenIl.isim}</div>
                 <div>${mesafe} km</div>
@@ -211,37 +285,47 @@
             
             tahminListesi.prepend(satir);
             ilInput.value = '';
-        
-            // Oyun Bitiş Kontrolleri
+
             if (mesafe === 0) {
-                // Doğru Bilindi
+                // DOĞRU TAHMİN EDİLDİ
+                clearInterval(sureZamanlayici);
                 oyunBitti = true;
-                skor += 10;
+                seri++; 
+                
+                if (seri > 1) {
+                    seriGosterge.innerText = `🔥x${seri}`;
+                    seriGosterge.classList.remove('hidden');
+                }
+                
+                // Puan Hesaplama (Seri başına ekstra 5 puan)
+                let kazanilanPuan = 10 + (seri > 1 ? (seri * 5) : 0);
+                skor += kazanilanPuan;
                 skorGosterge.innerText = skor;
+                
                 ilInput.disabled = true;
                 tahminEtBtn.disabled = true;
                 
                 sonucMesaji.innerText = `Tebrikler! ${hedefIl.isim} ilini buldun!`;
                 sonucAlani.classList.remove('hidden');
                 sonucAlani.classList.add('bg-green-100', 'text-green-800');
+                sonucAlani.classList.remove('bg-red-100', 'text-red-800');
+
+                // KONFETİ EFEKTİ
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+
             } else {
-                // Yanlış Bilindi
+                // YANLIŞ TAHMİN
                 kalanHak--;
                 guncelleHakGostergesi();
+                seri = 0; 
+                seriGosterge.classList.add('hidden');
                 
                 if (kalanHak <= 0) {
-                    oyunBitti = true;
-                    ilInput.disabled = true;
-                    tahminEtBtn.disabled = true;
-                    
-                    sonucMesaji.innerText = `Hakların bitti! Doğru il: ${hedefIl.isim}`;
-                    sonucAlani.classList.remove('hidden');
-                    sonucAlani.classList.add('bg-red-100', 'text-red-800');
+                    oyunuKaybet("Hakların bitti!");
                 }
             }
         }
-        
-        // 9. Matematiksel Mesafe ve Yön Fonksiyonları (Dokunulmadı)
+
         function getDistance(lat1, lon1, lat2, lon2) {
             const R = 6371; 
             const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -252,7 +336,7 @@
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             return Math.round(R * c);
         }
-        
+
         function getBearing(lat1, lon1, lat2, lon2) {
             const dLon = (lon2 - lon1) * (Math.PI / 180);
             lat1 = lat1 * (Math.PI / 180);
@@ -265,14 +349,12 @@
             const index = Math.round(brng / 45) % 8;
             return compass[index];
         }
-        
-        // 10. Buton Tetikleyicileri (Event Listeners)
+
         tahminEtBtn.addEventListener('click', tahminYap);
         ilInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') tahminYap(); });
         yeniOyunBtn.addEventListener('click', yeniOyun);
-        ipucuBtn.addEventListener('click', ipucuAl); // Buton artık çalışıyor!
-        
-        // Motoru Başlat
+        ipucuBtn.addEventListener('click', ipucuAl); 
+
         verileriYukle();
     </script>
 </body>
