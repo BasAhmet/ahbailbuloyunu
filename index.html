@@ -74,30 +74,55 @@
         const sonucMesaji = document.getElementById('sonucMesaji');
         const yeniOyunBtn = document.getElementById('yeniOyunBtn');
         let kalanHak = 6;
-
+        let iller = [];
+        let ipuclariVerisi = []; // İpuçlarını tutacağımız yeni dizi
+        let hedefIl = null;
+        
+        // 1. İki JSON dosyasını da aynı anda çekelim (Promise.all kullanmak hızı artırır)
+        async function verileriYukle() {
+            try {
+                const [illerResponse, ipuclariResponse] = await Promise.all([
+                    fetch('iller.json'),
+                    fetch('ipuclari.json')
+                ]);
+                
+                iller = await illerResponse.json();
+                ipuclariVerisi = await ipuclariResponse.json();
+                
+                yeniOyun();
+            } catch (hata) {
+                console.error("Veriler yüklenirken hata oluştu:", hata);
+                alert("Dosyalar bulunamadı, yerel sunucuda (Live Server) açtığından emin ol!");
+            }
+        }
+        
+        // 2. İpucu fonksiyonunu güncelleyelim
         function ipucuAl() {
+            if (!hedefIl) return; // Hedef il yoksa işlem yapma
+            
             if (kalanHak <= 1) {
                 alert("Son hakta ipucu alamazsın!");
                 return;
             }
+        
+            // İpuçları dizisinden hedef ilin plakasını bulalım (Eşleştirme)
+            const ilinIpuclariObjesi = ipuclariVerisi.find(veri => veri.plaka === hedefIl.plaka);
             
-            // İpucu türlerini belirleyelim
-            const ipuclari = [
-                `Bu ilin plaka kodu: ${hedefIl.plaka}`,
-                `Bu il ${hedefIl.bolge} bölgesindedir.`,
-                `Bu ilin komşularından biri: ${hedefIl.komsular[Math.floor(Math.random() * hedefIl.komsular.length)]}`
-            ];
-            
-            // Rastgele birini seçip gösterelim
-            const secilenIpucu = ipuclari[Math.floor(Math.random() * ipuclari.length)];
-            
-            // UI'da bir yere yazdıralım
-            alert("İpucu: " + secilenIpucu);
-            
-            // İpucu almak 1 hak eksiltsin (stratejik bir karar)
-            kalanHak--;
-            guncelleHakGostergesi();
+            if (ilinIpuclariObjesi) {
+                kalanHak--; // İpucu kullanıldığı için 1 hak düşür
+                // UI güncelleme fonksiyonun varsa burada çağır: guncelleHakGostergesi();
+                
+                // 5 özellikten rastgele birini seç
+                const rastgeleIpucu = ilinIpuclariObjesi.ipuclari[Math.floor(Math.random() * ilinIpuclariObjesi.ipuclari.length)];
+                
+                // İpucunu ekranda göster
+                alert(`💡 Meşhur Özellik: ${rastgeleIpucu}`);
+            } else {
+                alert("Bu il için ipucu bulunamadı!");
+            }
         }
+
+  
         
         function tahminYap() {
             if (oyunBitti || kalanHak <= 0) return;
