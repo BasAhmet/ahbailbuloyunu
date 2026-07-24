@@ -58,27 +58,28 @@
     </div>
 
     <script>
-        // 1. Veri Seti (Kısa örnek, gerçekte 81 il olacak)
-        let iller = []; // Başlangıçta boş dizi     
+       // 1. Ortak Değişkenler (Tek bir kez tanımlandı)
+        let iller = [];
+        let ipuclariVerisi = [];
         let hedefIl = null;
         let skor = 0;
         let oyunBitti = false;
-
+        let kalanHak = 6;
+        
+        // 2. HTML Elementlerinin Seçimi
         const ilInput = document.getElementById('ilInput');
         const illerList = document.getElementById('illerList');
         const tahminEtBtn = document.getElementById('tahminEtBtn');
         const tahminListesi = document.getElementById('tahminListesi');
         const skorGosterge = document.getElementById('skorGosterge');
+        const hakGosterge = document.getElementById('hakGosterge'); // Hak göstergesi eklendi
         const ilSekli = document.getElementById('ilSekli');
         const sonucAlani = document.getElementById('sonucAlani');
         const sonucMesaji = document.getElementById('sonucMesaji');
         const yeniOyunBtn = document.getElementById('yeniOyunBtn');
-        let kalanHak = 6;
-        let iller = [];
-        let ipuclariVerisi = []; // İpuçlarını tutacağımız yeni dizi
-        let hedefIl = null;
+        const ipucuBtn = document.getElementById('ipucuBtn'); // İpucu butonu eklendi
         
-        // 1. İki JSON dosyasını da aynı anda çekelim (Promise.all kullanmak hızı artırır)
+        // 3. İki Veriyi Aynı Anda Yükleyen Tek Fonksiyon
         async function verileriYukle() {
             try {
                 const [illerResponse, ipuclariResponse] = await Promise.all([
@@ -89,72 +90,152 @@
                 iller = await illerResponse.json();
                 ipuclariVerisi = await ipuclariResponse.json();
                 
-                yeniOyun();
+                init(); // Veriler inince oyunu hazırla
             } catch (hata) {
                 console.error("Veriler yüklenirken hata oluştu:", hata);
                 alert("Dosyalar bulunamadı, yerel sunucuda (Live Server) açtığından emin ol!");
             }
         }
         
-        // 2. İpucu fonksiyonunu güncelleyelim
+        // 4. Oyunu İlk Hazırlama
+        function init() {
+            illerList.innerHTML = '';
+            iller.forEach(il => {
+                const option = document.createElement('option');
+                option.value = il.isim;
+                illerList.appendChild(option);
+            });
+            yeniOyun();
+        }
+        
+        // 5. Yeni El Başlatma (Tüm Değerleri Sıfırlama)
+        function yeniOyun() {
+            oyunBitti = false;
+            kalanHak = 6; // Haklar sıfırlandı
+            guncelleHakGostergesi(); // Ekrana yansıtıldı
+            
+            tahminListesi.innerHTML = '';
+            ilInput.value = '';
+            sonucAlani.className = 'hidden mb-6 p-4 rounded-xl text-center'; // Renkleri sıfırlayarak gizle
+            ilInput.disabled = false;
+            tahminEtBtn.disabled = false;
+            
+            // Rastgele il seçimi
+            const rastgeleIndex = Math.floor(Math.random() * iller.length);
+            hedefIl = iller[rastgeleIndex];
+            
+            // Şekli çizdir
+            if (hedefIl.svgPaths) {
+                ilSekli.innerHTML = hedefIl.svgPaths.map(pathData => `<path d="${pathData}" />`).join('');
+                setTimeout(() => {
+                    const bbox = ilSekli.getBBox(); 
+                    const padding = 10;
+                    ilSekli.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${bbox.width + (padding * 2)} ${bbox.height + (padding * 2)}`);
+                }, 10);
+            }
+            
+            console.log("Gizli İl:", hedefIl.isim); // Konsoldan kopya çekebilirsin :)
+        }
+        
+        // 6. Eksik Olan Hak Güncelleme Fonksiyonu
+        function guncelleHakGostergesi() {
+            if (hakGosterge) hakGosterge.innerText = kalanHak;
+        }
+        
+        // 7. İpucu Sistemi
         function ipucuAl() {
-            if (!hedefIl) return; // Hedef il yoksa işlem yapma
+            if (!hedefIl || oyunBitti) return; 
             
             if (kalanHak <= 1) {
                 alert("Son hakta ipucu alamazsın!");
                 return;
             }
         
-            // İpuçları dizisinden hedef ilin plakasını bulalım (Eşleştirme)
             const ilinIpuclariObjesi = ipuclariVerisi.find(veri => veri.plaka === hedefIl.plaka);
             
             if (ilinIpuclariObjesi) {
-                kalanHak--; // İpucu kullanıldığı için 1 hak düşür
-                // UI güncelleme fonksiyonun varsa burada çağır: guncelleHakGostergesi();
+                kalanHak--; 
+                guncelleHakGostergesi();
                 
-                // 5 özellikten rastgele birini seç
                 const rastgeleIpucu = ilinIpuclariObjesi.ipuclari[Math.floor(Math.random() * ilinIpuclariObjesi.ipuclari.length)];
-                
-                // İpucunu ekranda göster
                 alert(`💡 Meşhur Özellik: ${rastgeleIpucu}`);
             } else {
                 alert("Bu il için ipucu bulunamadı!");
             }
         }
-
-  
         
+        // 8. Birleştirilmiş Kusursuz Tahmin Fonksiyonu
         function tahminYap() {
             if (oyunBitti || kalanHak <= 0) return;
             
-            // ... tahmin kontrol kodların ...
-            
-            // Her yanlış tahminde hak düşür
-            kalanHak--;
-            guncelleHakGostergesi();
-            
-            if (kalanHak <= 0 && mesafe !== 0) {
-                alert("Hakların bitti! Oyun bitti. İl: " + hedefIl.isim);
-                // Yeniden başlama mantığını tetikle
+            const tahminIsim = ilInput.value.trim();
+            if (!tahminIsim) return; // Boş basılırsa işlem yapma
+        
+            const tahminEdilenIl = iller.find(il => il.isim.toLocaleLowerCase('tr-TR') === tahminIsim.toLocaleLowerCase('tr-TR'));
+        
+            if (!tahminEdilenIl) {
+                alert("Lütfen geçerli bir il girin.");
+                return;
             }
-        }
-        // Veriyi dışarıdan çekme işlemi
-        async function verileriYukle() {
-            try {
-                const response = await fetch('iller.json');
-                iller = await response.json();
+        
+            const mesafe = getDistance(tahminEdilenIl.lat, tahminEdilenIl.lng, hedefIl.lat, hedefIl.lng);
+            const yon = mesafe === 0 ? "🎯" : getBearing(tahminEdilenIl.lat, tahminEdilenIl.lng, hedefIl.lat, hedefIl.lng);
+            
+            let yakinlik = Math.max(0, 100 - Math.round((mesafe / 1600) * 100));
+            if (mesafe === 0) yakinlik = 100;
+        
+            const satir = document.createElement('div');
+            satir.className = "grid grid-cols-4 gap-2 bg-slate-50 p-3 rounded-lg items-center text-center font-semibold text-slate-700 animate-[bounce_0.3s_ease-in-out]";
+            
+            let bgRenk = mesafe === 0 ? 'bg-green-500' : 
+                         yakinlik > 80 ? 'bg-yellow-400' : 'bg-slate-200';
+        
+            satir.innerHTML = `
+                <div class="truncate px-1">${tahminEdilenIl.isim}</div>
+                <div>${mesafe} km</div>
+                <div class="text-xl">${yon}</div>
+                <div>
+                    <div class="w-full bg-slate-200 rounded-full h-4 overflow-hidden">
+                        <div class="${bgRenk} h-4" style="width: ${yakinlik}%"></div>
+                    </div>
+                </div>
+            `;
+            
+            tahminListesi.prepend(satir);
+            ilInput.value = '';
+        
+            // Oyun Bitiş Kontrolleri
+            if (mesafe === 0) {
+                // Doğru Bilindi
+                oyunBitti = true;
+                skor += 10;
+                skorGosterge.innerText = skor;
+                ilInput.disabled = true;
+                tahminEtBtn.disabled = true;
                 
-                // Veri yüklendikten sonra oyunu başlat
-                init(); 
-            } catch (error) {
-                console.error("Veri yüklenemedi:", error);
-                alert("İl haritaları yüklenirken bir sorun oluştu.");
+                sonucMesaji.innerText = `Tebrikler! ${hedefIl.isim} ilini buldun!`;
+                sonucAlani.classList.remove('hidden');
+                sonucAlani.classList.add('bg-green-100', 'text-green-800');
+            } else {
+                // Yanlış Bilindi
+                kalanHak--;
+                guncelleHakGostergesi();
+                
+                if (kalanHak <= 0) {
+                    oyunBitti = true;
+                    ilInput.disabled = true;
+                    tahminEtBtn.disabled = true;
+                    
+                    sonucMesaji.innerText = `Hakların bitti! Doğru il: ${hedefIl.isim}`;
+                    sonucAlani.classList.remove('hidden');
+                    sonucAlani.classList.add('bg-red-100', 'text-red-800');
+                }
             }
         }
-
-        // Haversine Mesafe Formülü
+        
+        // 9. Matematiksel Mesafe ve Yön Fonksiyonları (Dokunulmadı)
         function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Dünya yarıçapı (km)
+            const R = 6371; 
             const dLat = (lat2 - lat1) * (Math.PI / 180);
             const dLon = (lon2 - lon1) * (Math.PI / 180);
             const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -163,8 +244,7 @@
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             return Math.round(R * c);
         }
-
-        // Pusula Yönü Hesaplama
+        
         function getBearing(lat1, lon1, lat2, lon2) {
             const dLon = (lon2 - lon1) * (Math.PI / 180);
             lat1 = lat1 * (Math.PI / 180);
@@ -177,100 +257,15 @@
             const index = Math.round(brng / 45) % 8;
             return compass[index];
         }
-
-        function init() {
-            illerList.innerHTML = '';
-            iller.forEach(il => {
-                const option = document.createElement('option');
-                option.value = il.isim;
-                illerList.appendChild(option);
-            });
-            yeniOyun();
-        }
-
-        function yeniOyun() {
-            oyunBitti = false;
-            tahminListesi.innerHTML = '';
-            ilInput.value = '';
-            sonucAlani.classList.add('hidden');
-            ilInput.disabled = false;
-            tahminEtBtn.disabled = false;
-            
-            // Rastgele il seçimi
-            const rastgeleIndex = Math.floor(Math.random() * iller.length);
-            hedefIl = iller[rastgeleIndex];
-            
-            // Şekli çizdir
-            ilSekli.innerHTML = hedefIl.svgPaths.map(pathData => `<path d="${pathData}" />`).join('');
-            // Zoom/BBox hesaplamasını da diziye uyarlayalım
-            setTimeout(() => {
-                // Tüm path'leri kapsayan bir grup oluşturup onun bbox'ını alabiliriz
-                // Veya SVG'nin kendi getBBox() fonksiyonu zaten tüm içerikleri hesaplar
-                const bbox = ilSekli.getBBox(); 
-                const padding = 10;
-                ilSekli.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${bbox.width + (padding * 2)} ${bbox.height + (padding * 2)}`);
-            }, 10);
-            console.log("Gizli İl:", hedefIl.isim);
-
-        }
-
-        function tahminYap() {
-            if (oyunBitti) return;
-            
-            const tahminIsim = ilInput.value.trim();
-            const tahminEdilenIl = iller.find(il => il.isim.toLocaleLowerCase('tr-TR') === tahminIsim.toLocaleLowerCase('tr-TR'));
-
-            if (!tahminEdilenIl) {
-                alert("Lütfen geçerli bir il girin.");
-                return;
-            }
-
-            const mesafe = getDistance(tahminEdilenIl.lat, tahminEdilenIl.lng, hedefIl.lat, hedefIl.lng);
-            const yon = mesafe === 0 ? "🎯" : getBearing(tahminEdilenIl.lat, tahminEdilenIl.lng, hedefIl.lat, hedefIl.lng);
-            
-            // Maksimum mesafe Türkiye için ortalama 1600km baz alınarak yakınlık yüzdesi hesabı
-            let yakinlik = Math.max(0, 100 - Math.round((mesafe / 1600) * 100));
-            if(mesafe === 0) yakinlik = 100;
-
-            const satir = document.createElement('div');
-            satir.className = "grid grid-cols-4 gap-2 bg-slate-50 p-3 rounded-lg items-center text-center font-semibold text-slate-700 animate-[bounce_0.3s_ease-in-out]";
-            
-            let bgRenk = mesafe === 0 ? 'bg-green-500' : 
-                         yakinlik > 80 ? 'bg-yellow-400' : 'bg-slate-200';
-
-            satir.innerHTML = `
-                <div class="truncate px-1">${tahminEdilenIl.isim}</div>
-                <div>${mesafe} km</div>
-                <div class="text-xl">${yon}</div>
-                <div>
-                    <div class="w-full bg-slate-200 rounded-full h-4 overflow-hidden">
-                        <div class="${bgRenk} h-4" style="width: ${yakinlik}%"></div>
-                    </div>
-                </div>
-            `;
-            
-            tahminListesi.prepend(satir); // En son tahmini en üste ekler
-            ilInput.value = '';
-
-            if (mesafe === 0) {
-                oyunBitti = true;
-                skor += 10; // Doğru bilince 10 puan
-                skorGosterge.innerText = skor;
-                ilInput.disabled = true;
-                tahminEtBtn.disabled = true;
-                
-                sonucMesaji.innerText = `Tebrikler! ${hedefIl.isim} ilini buldun!`;
-                sonucAlani.classList.remove('hidden');
-                sonucAlani.classList.add('bg-green-100', 'text-green-800');
-            }
-        }
-
+        
+        // 10. Buton Tetikleyicileri (Event Listeners)
         tahminEtBtn.addEventListener('click', tahminYap);
         ilInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') tahminYap(); });
         yeniOyunBtn.addEventListener('click', yeniOyun);
-
+        ipucuBtn.addEventListener('click', ipucuAl); // Buton artık çalışıyor!
+        
+        // Motoru Başlat
         verileriYukle();
-        //init();
     </script>
 </body>
 </html>
