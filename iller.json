@@ -2,8 +2,6 @@
   {
     "plaka": 1,
     "isim": "Adana",
-    "bolge": "Akdeniz", 
-    "komsular": ["Mersin", "Niğde", "Kayseri", "Kahramanmaraş", "Osmaniye", "Hatay"],
     "lat": 37.0000,
     "lng": 35.3213,
     "svgPaths": [
@@ -13,8 +11,6 @@
   {
     "plaka": 2, 
     "isim": "Adıyaman",
-    "bolge": "Güneydoğu Anadolu", 
-    "komsular": ["Malatya", "Kahramanmaraş", "Gaziantep", "Şanlıurfa", "Diyarbakır"],
     "lat": 37.7648, 
     "lng": 38.2786,
     "svgPaths": [
@@ -23,9 +19,7 @@
   }, 
   {
     "plaka": 3, 
-    "isim": "Afyonkarahisar", 
-    "bolge": "Ege",
-    "komsular": ["Kütahya", "Uşak", "Denizli", "Burdur", "Isparta", "Konya", "Eskişehir"],
+    "isim": "Afyonkarahisar",
     "lat": 38.7507, 
     "lng": 30.5567,
     "svgPaths": [
@@ -705,8 +699,6 @@
   {
     "plaka": 78, 
     "isim": "Karabük",
-    "bolge": "Karadeniz",
-    "komsular": ["Bartın", "Kastamonu", "Çankırı", "Bolu", "Zonguldak"],
     "lat": 41.2061,
     "lng": 32.6228,
     "svgPaths": [
@@ -715,9 +707,7 @@
   },
   {
     "plaka": 79,
-    "isim": "Kilis", 
-    "bolge": "Güneydoğu Anadolu",
-    "komsular": ["Gaziantep", "Hatay"],
+    "isim": "Kilis",
     "lat": 36.7184, 
     "lng": 37.1212,
     "svgPaths": [
@@ -727,7 +717,6 @@
   {
     "plaka": 80, 
     "isim": "Osmaniye",
-    "bolge": "Akdeniz", "komsular": ["Hatay", "Gaziantep", "Kahramanmaraş", "Adana"],
     "lat": 37.0742,
     "lng": 36.2475,
     "svgPaths": [
@@ -737,8 +726,6 @@
   {
     "plaka": 81, 
     "isim": "Düzce",
-    "bolge": "Karadeniz",
-    "komsular": ["Sakarya", "Bolu", "Zonguldak"],
     "lat": 40.8438,
     "lng": 31.1565,
     "svgPaths": [
