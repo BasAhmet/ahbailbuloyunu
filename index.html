@@ -55,9 +55,19 @@
         <!-- Sonuç & Yeni Oyun Alanı -->
         <div id="sonucAlani" class="hidden mb-6 p-4 rounded-xl text-center">
             <h2 id="sonucMesaji" class="text-xl md:text-2xl font-bold mb-3"></h2>
-            <button id="yeniOyunBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-2 rounded-lg transition shadow-md">
-                Sıradaki İl ➔
-            </button>
+            
+            <!-- EĞİTİCİ BİLGİ KARTI (Burası yeni eklendi) -->
+            <div id="egiticiBilgiAlani" class="hidden mt-4 p-4 bg-blue-50 text-blue-900 rounded-xl text-left border border-blue-200">
+                <h3 class="font-bold text-sm mb-2 text-blue-700 flex items-center gap-2">
+                    🧠 Sınav Notu (Öğrenelim):
+                </h3>
+                <ul id="bilgiListesi" class="list-disc list-inside text-sm space-y-1"></ul>
+            </div>
+            <div class="mt-6">
+                <button id="yeniOyunBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-2 rounded-lg transition shadow-md">
+                    Sıradaki İl ➔
+                </button>
+            </div>
             
             <!-- MOD DEĞİŞTİRİCİ -->
             <div class="flex justify-center mt-4">
@@ -194,6 +204,7 @@
             sonucAlani.className = 'hidden mb-6 p-4 rounded-xl text-center';
             ilInput.disabled = false;
             tahminEtBtn.disabled = false;
+            document.getElementById('egiticiBilgiAlani').classList.add('hidden'); // Yeni oyun başlayınca gizle
             
             const rastgeleIndex = Math.floor(Math.random() * iller.length);
             hedefIl = iller[rastgeleIndex];
@@ -324,6 +335,27 @@
                     oyunuKaybet("Hakların bitti!");
                 }
             }
+            // --- EĞİTİCİ BİLGİ GÖSTERİMİ ---
+            const bilgiAlani = document.getElementById('egiticiBilgiAlani');
+            const bilgiListesi = document.getElementById('bilgiListesi');
+            
+            const ilinIpuclariObjesi = ipuclariVerisi.find(veri => veri.plaka === hedefIl.plaka);
+            
+            if (ilinIpuclariObjesi) {
+                bilgiListesi.innerHTML = ''; // Temizle
+                
+                // Hem standart hem sınav ipuçlarını birleştir
+                const tumBilgiler = [...ilinIpuclariObjesi.ipuclari, ...(ilinIpuclariObjesi.sinavIpuclari || [])];
+                
+                tumBilgiler.forEach(bilgi => {
+                    const li = document.createElement('li');
+                    li.textContent = bilgi;
+                    bilgiListesi.appendChild(li);
+                });
+                
+                bilgiAlani.classList.remove('hidden');
+            }
+            // son
         }
 
         function getDistance(lat1, lon1, lat2, lon2) {
