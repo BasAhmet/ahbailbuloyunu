@@ -127,15 +127,15 @@
             hedefIl = iller[rastgeleIndex];
             
             // Şekli çizdir
-            ilSekli.innerHTML = `<path id="cizilenIl" d="${hedefIl.svgPath}" />`;
+            ilSekli.innerHTML = hedefIl.svgPaths.map(pathData => `<path d="${pathData}" />`).join('');
+            // Zoom/BBox hesaplamasını da diziye uyarlayalım
             setTimeout(() => {
-            const pathEl = document.getElementById('cizilenIl');
-            if (pathEl) {
-                const bbox = pathEl.getBBox();
-                const padding = 10; // Şeklin kenarlarına biraz boşluk bırakalım
+                // Tüm path'leri kapsayan bir grup oluşturup onun bbox'ını alabiliriz
+                // Veya SVG'nin kendi getBBox() fonksiyonu zaten tüm içerikleri hesaplar
+                const bbox = ilSekli.getBBox(); 
+                const padding = 10;
                 ilSekli.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${bbox.width + (padding * 2)} ${bbox.height + (padding * 2)}`);
-            }
-        }, 10);
+            }, 10);
             console.log("Gizli İl:", hedefIl.isim);
 
         }
